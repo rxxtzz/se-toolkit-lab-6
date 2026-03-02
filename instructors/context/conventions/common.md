@@ -24,6 +24,7 @@
 - [4.22. Environment variable references](#422-environment-variable-references)
 - [4.23. Horizontal rules](#423-horizontal-rules)
 - [4.24. Inline paths](#424-inline-paths)
+- [4.25. Branch-on-remote references](#425-branch-on-remote-references)
 
 ## 4.1. Instructions wording
 
@@ -361,3 +362,25 @@ Bad: `----`, `-----`, `***`, `___`
 Use a trailing `/` for directory paths: `` `lab/tasks/` ``, `` `frontend/` ``.
 
 Exception: `..` references do not get a trailing `/`: `` `lab/tasks/..` ``.
+
+## 4.25. Branch-on-remote references
+
+When referring to a branch on a remote in prose, use `` `<branch>` on `<remote>` ``:
+
+```markdown
+Pull changes from `<branch>` on `<remote>`.
+```
+
+When the placeholder pair first appears in a section, link each part to its definition:
+
+From a wiki file:
+
+```markdown
+See [`<branch>`](./git.md#branch), [`<remote>`](./git.md#remote).
+```
+
+From a task file:
+
+```markdown
+See [`<branch>`](../../../wiki/git.md#branch), [`<remote>`](../../../wiki/git.md#remote).
+```
