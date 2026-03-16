@@ -3,6 +3,8 @@
 ## Overview
 This agent connects to an LLM via OpenAI-compatible API and returns structured JSON responses. It has tools (`read_file`, `read_multiple_files`, `list_files`, `query_api`) that allow it to navigate the project wiki, read source code, and query the backend API for real-time data.
 
+**Implementation note:** Uses `httpx` (not `requests`) for HTTP calls, as it's already included in the project dependencies.
+
 ## LLM Provider
 - **Provider**: Qwen Code API (local deployment)
 - **Model**: qwen3-coder-plus

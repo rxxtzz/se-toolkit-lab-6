@@ -7,7 +7,7 @@ Sends questions to LLM, executes tool calls, and returns structured JSON respons
 import os
 import sys
 import json
-import requests
+import httpx
 
 
 # Project root directory (where agent.py is located)
@@ -147,26 +147,27 @@ def query_api(method: str, path: str, body: str = None, auth: bool = True) -> st
             "headers": headers,
             "timeout": 30
         }
-        
+
         # Add body for POST/PUT/PATCH
         if body and method.upper() in ["POST", "PUT", "PATCH"]:
             kwargs["data"] = body
-        
-        # Make request
-        response = requests.request(**kwargs)
-        
+
+        # Make request using httpx
+        with httpx.Client() as client:
+            response = client.request(**kwargs)
+
         # Return response as JSON string
         return json.dumps({
             "status_code": response.status_code,
             "body": response.text
         })
-        
-    except requests.exceptions.Timeout:
+
+    except httpx.TimeoutException:
         return json.dumps({
             "status_code": 0,
             "body": "Error: Request timed out"
         })
-    except requests.exceptions.ConnectionError as e:
+    except httpx.ConnectError as e:
         return json.dumps({
             "status_code": 0,
             "body": f"Error: Connection error - {str(e)}"
@@ -363,22 +364,23 @@ def call_llm(api_key: str, api_base: str, model: str, messages: list) -> dict:
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
-    
+
     payload = {
         "model": model,
         "messages": messages,
         "tools": TOOLS,
         "tool_choice": "auto"
     }
-    
-    response = requests.post(
-        f"{api_base}/chat/completions",
-        headers=headers,
-        json=payload,
-        timeout=60
-    )
-    response.raise_for_status()
-    
+
+    with httpx.Client() as client:
+        response = client.post(
+            f"{api_base}/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=60
+        )
+        response.raise_for_status()
+
     return response.json()
 
 
@@ -532,19 +534,19 @@ def main():
     try:
         # Run agentic loop
         result = run_agentic_loop(api_key, api_base, model, question)
-        
+
         # Output structured JSON
         print(json.dumps(result))
         sys.exit(0)
 
-    except requests.exceptions.Timeout:
+    except httpx.TimeoutException:
         print(json.dumps({
             "answer": "Error: LLM request timed out",
             "source": "",
             "tool_calls": []
         }))
         sys.exit(1)
-    except requests.exceptions.RequestException as e:
+    except httpx.RequestError as e:
         print(json.dumps({
             "answer": f"Error: Failed to connect to LLM - {str(e)}",
             "source": "",
