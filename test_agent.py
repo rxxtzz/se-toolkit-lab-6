@@ -78,7 +78,7 @@ class TestAgent(unittest.TestCase):
         env['LLM_API_KEY'] = 'test-key'
         env['LLM_API_BASE'] = 'http://localhost:9999'  # Non-existent port
         env['LLM_MODEL'] = 'test-model'
-        
+
         result = subprocess.run(
             [sys.executable, self.agent_path, "test"],
             capture_output=True,
@@ -86,7 +86,7 @@ class TestAgent(unittest.TestCase):
             env=env,
             timeout=5  # Prevent hanging
         )
-        
+
         # Should output valid JSON even on error
         try:
             output = json.loads(result.stdout)
@@ -96,6 +96,47 @@ class TestAgent(unittest.TestCase):
             self.assertIsInstance(output['tool_calls'], list)
         except json.JSONDecodeError:
             self.fail(f"Output is not valid JSON: {result.stdout}")
+
+    def test_agent_has_source_field(self):
+        """Test that agent output includes source field (Task 2 requirement)"""
+        env = os.environ.copy()
+        env['LLM_API_KEY'] = 'test-key'
+        env['LLM_API_BASE'] = 'http://localhost:9999'
+        env['LLM_MODEL'] = 'test-model'
+
+        result = subprocess.run(
+            [sys.executable, self.agent_path, "test question"],
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=5
+        )
+
+        # Should output valid JSON with source field
+        try:
+            output = json.loads(result.stdout)
+            self.assertIn('source', output)
+        except json.JSONDecodeError:
+            self.fail(f"Output is not valid JSON: {result.stdout}")
+
+    def test_agent_tools_exist(self):
+        """Test that the agent has read_file and list_files tools implemented"""
+        # This test verifies the tools are implemented by checking the agent code
+        with open(self.agent_path, 'r') as f:
+            code = f.read()
+        
+        # Check that read_file function exists
+        self.assertIn('def read_file', code, "read_file function not implemented")
+        
+        # Check that list_files function exists
+        self.assertIn('def list_files', code, "list_files function not implemented")
+        
+        # Check that tools are registered
+        self.assertIn('"read_file"', code, "read_file tool not registered")
+        self.assertIn('"list_files"', code, "list_files tool not registered")
+        
+        # Check that agentic loop exists
+        self.assertIn('MAX_TOOL_CALLS', code, "Max tool calls limit not implemented")
 
 
 if __name__ == '__main__':
